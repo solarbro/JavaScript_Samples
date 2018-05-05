@@ -16,7 +16,7 @@ function Ball(position, radius, velocity, color) {
     this.color = color;
 }
 
-function Quad(position, size, color) {
+function Quad(position, size, color=new Color(0, 0, 0)) {
     this.position = position;
     this.size = size;
     this.color = color;
@@ -26,6 +26,15 @@ function Paddle(quad, speed, state) {
     this.quad = quad;
     this.speed = speed;
     this.state = state;
+}
+
+//We only need to store the brick position, and fill + border colors
+function Brick(position, fill, border, life=1) {
+    this.position = position;
+    this.fill = fill;
+    this.stroke = border;
+    this.maxLife = life;
+    this.life = life;
 }
 
 //Game state
@@ -41,6 +50,13 @@ var randomColorOnBounce = true;
 const paddleHeight = 10;
 const paddleWidth = 75;
 var paddle = new Paddle(new Quad(new Vec2((canvas.width-paddleWidth)/2, canvas.height - paddleHeight), new Vec2(paddleWidth, paddleHeight), ballNeutralColor), 500, 0);
+//bricks
+var brickWall = new Vec2(5, 3);
+var brickSize = new Vec2(75, 20);
+var brickPadding = 10;
+var brickWallPos = new Vec2(30, 30);
+var brickPattern = 0; //0=rows/columns 1=interleaved
+var bricks = []; 
 //Input state
 var ltDown = false;
 var rtDown = false;
@@ -54,6 +70,7 @@ main();
 function main() {
     document.addEventListener("keydown", keyDownHandler, false);
     document.addEventListener("keyup", keyUpHandler, false);
+    buildTheWall(); //For now, just build the wall at load time
     setInterval(draw, 16);
 }
 
@@ -68,6 +85,7 @@ function draw() {
 
 function drawScene() {
     drawBackground();
+    drawBricks();
     drawBall();
     drawPaddle();
 }
@@ -90,6 +108,23 @@ function drawBackground() {
 
 function drawPaddle() {
     drawQuad(paddle.quad);
+}
+
+function drawBricks() {
+    ctx.beginPath();
+    for(c=0; c<brickWall.x; c++) {
+        for(r=0; r<brickWall.y; r++) {
+            var currentBrick = bricks[c][r];
+            if(currentBrick.life) {
+                ctx.rect(currentBrick.position.x, currentBrick.position.y, brickSize.x, brickSize.y);
+                ctx.fillStyle = rgbToHex(currentBrick.fill);
+                ctx.fill();
+                ctx.strokeStyle = rgbToHex(currentBrick.stroke);
+                ctx.stroke();
+            }
+        }
+    }
+    ctx.closePath();
 }
 
 function drawQuad(quad) {
@@ -130,12 +165,30 @@ function detectCollision() {
         ball.velocity.x = -ball.velocity.x;
     }
     //detect ball against paddle
-    var paddleCollisionResult = collisionBallQuad(ball, paddle.quad);
-    if(paddleCollisionResult) {
-        if(paddleCollisionResult === 1 || paddleCollisionResult === 3) {
+    var paddleCollisionResult = collisionBallQuad(ball, new Quad(paddle.quad.position, new Vec2(paddle.quad.size.x, 1)));
+    resolveBallQuad(ball, paddleCollisionResult);
+    //detect ball against bricks
+    for(c=0; c<brickWall.x; c++) {
+        for(r=0; r<brickWall.y; r++) {
+            var currentBrick = bricks[c][r];
+            var brickQuad = new Quad(currentBrick.position, brickSize);
+            if(currentBrick.life) {
+                var brickCollision = collisionBallQuad(ball, brickQuad);
+                resolveBallQuad(ball, brickCollision);
+                if(brickCollision) {
+                    bricks[c][r].life--;
+                }
+            }
+        }
+    }
+}
+
+function resolveBallQuad(ball, result) {
+    if(result) {
+        if(result === 1 || result === 3) {
             ball.velocity.y = -ball.velocity.y;
         }
-        if(paddleCollisionResult === 2 || paddleCollisionResult == 3) {
+        if(result === 2 || result == 3) {
             ball.velocity.x = -ball.velocity.x;
         }
         if(randomColorOnBounce) {
@@ -220,6 +273,17 @@ function collisionBallQuad(ball, quad) {
         return 1; //vertical collision
     }
     return 2; //horizontal collision
+}
+
+function buildTheWall() {
+    for(c=0; c<brickWall.x; c++) {
+        bricks[c] = [];
+        for(r=0; r<brickWall.y; r++) {
+            var brickX = (c*(brickSize.x+brickPadding))+brickWallPos.x;
+            var brickY = (r*(brickSize.y+brickPadding))+brickWallPos.y;
+            bricks[c][r] = new Brick(new Vec2(brickX, brickY), ballNeutralColor, new Color(0, 0, 0));
+        }
+    }
 }
 
 //Input
