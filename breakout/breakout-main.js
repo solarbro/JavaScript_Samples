@@ -1,4 +1,6 @@
 const canvas = document.querySelector('#breakoutCanvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 const ctx = canvas.getContext('2d');
 const frameTime = 16; //locked 16ms per frame
 
@@ -39,7 +41,7 @@ function Brick(position, fill, border, life=1) {
 
 //Game state
 //game options
-const enableGameOver = false;
+const enableGameOver = true;
 const randomColorOnBounce = false;
 //Game state enum
 const gameLoad = 0;
@@ -53,6 +55,8 @@ const levelStyleRainbow = 2;
 var gameState = gameLoad;
 var gameLevel = 1; //level (influence ball speed, brick size/layout/count)
 var levelLoadFinished = false;
+var score = 0;
+var highScore = 0;
 //background 
 var bgColor = new Color(0, 128, 64);
 //Field
@@ -68,13 +72,15 @@ const paddleHeight = 10;
 const paddleWidth = 75;
 var paddle = new Paddle(new Quad(new Vec2(0, 0), new Vec2(0, 0), new Color(0, 0, 0)), 0, 0);
 //bricks
-//var brickWall = new Vec2(5, 3);
-//var brickPadding = 10;
 var brickSize = new Vec2(75, 20);
-//var brickWallPos = new Vec2(30, 30);
 var bricks = []; 
 var brickCount = 15;
 var bricksBroken = 0;
+//ScoreBoard
+var scoreBoardPos = new Vec2(0, 0);
+var scoreFont = "Arial";
+var scoreSize = 16;
+var scoreColor = new Color(255, 255, 255);
 //Input state
 var ltDown = false;
 var rtDown = false;
@@ -105,6 +111,7 @@ function drawScene() {
     drawBricks();
     drawBall();
     drawPaddle();
+    drawScore();
     switch(gameState) {
         case gameLoad:
             //Draw load screen here
@@ -162,6 +169,12 @@ function drawField() {
     ctx.closePath();
 }
 
+function drawScore() {
+    ctx.font = ""+scoreSize+"px "+scoreFont;
+    ctx.fillStyle = rgbToHex(scoreColor);
+    ctx.fillText("Score: "+score+" High score: "+highScore, scoreBoardPos.x, scoreBoardPos.y); 
+}
+
 function drawPaddle() {
     drawQuad(paddle.quad);
 }
@@ -169,16 +182,14 @@ function drawPaddle() {
 function drawBricks() {
     ctx.beginPath();
     for(b=0; b<brickCount; b++) {
-        //for(r=0; r<brickWall.y; r++) {
-            var currentBrick = bricks[b];
-            if(currentBrick.life) {
-                ctx.rect(currentBrick.position.x, currentBrick.position.y, brickSize.x, brickSize.y);
-                ctx.fillStyle = rgbToHex(currentBrick.fill);
-                ctx.fill();
-                ctx.strokeStyle = rgbToHex(currentBrick.stroke);
-                ctx.stroke();
-            }
-        //}
+        var currentBrick = bricks[b];
+        if(currentBrick.life) {
+            ctx.rect(currentBrick.position.x, currentBrick.position.y, brickSize.x, brickSize.y);
+            ctx.fillStyle = rgbToHex(currentBrick.fill);
+            ctx.fill();
+            ctx.strokeStyle = rgbToHex(currentBrick.stroke);
+            ctx.stroke();
+        }
     }
     ctx.closePath();
 }
@@ -222,6 +233,9 @@ function updateGameState(dt) {
             gameLevel = 1;
             gameState = gameLoad;
             levelLoadFinished = false;
+            //Log high score and reset level score
+            highScore = Math.max(score, highScore);
+            score = 0;
             break;
         default:
             alert("WTF!!");
@@ -240,7 +254,7 @@ function detectCollision() {
     if(ball.position.y < field.position.y + ball.radius) {
         ball.velocity.y = -ball.velocity.y;
     } else if(ball.position.y > canvas.height + ball.radius) {
-        if(enableGameOver) {
+        if(gameOverEnabled()) {
             //alert("Setting game state to " + gameOver);
             gameState = gameOver;
             return;
@@ -256,20 +270,19 @@ function detectCollision() {
     resolveBallQuad(ball, paddleCollisionResult);
     //detect ball against bricks
     for(b=0; b<brickCount; b++) {
-        //for(r=0; r<brickWall.y; r++) {
-            var currentBrick = bricks[b];
-            var brickQuad = new Quad(currentBrick.position, brickSize);
-            if(currentBrick.life) {
-                var brickCollision = collisionBallQuad(ball, brickQuad);
-                resolveBallQuad(ball, brickCollision);
-                if(brickCollision) {
-                    bricks[b].life--;
-                    if(bricks[b].life == 0) {  
-                        bricksBroken++;
-                    }
+        var currentBrick = bricks[b];
+        var brickQuad = new Quad(currentBrick.position, brickSize);
+        if(currentBrick.life) {
+            var brickCollision = collisionBallQuad(ball, brickQuad);
+            resolveBallQuad(ball, brickCollision);
+            if(brickCollision) {
+                bricks[b].life--;
+                if(bricks[b].life == 0) {  
+                    bricksBroken++;
+                    score += currentBrick.maxLife;
                 }
             }
-        //}
+        }
     }
     //If all bricks are gone, go to level complete
     if(bricksBroken >= brickCount) {
@@ -349,6 +362,10 @@ function rgbInverse(inColor) {
 
 function rgbToHex(rgb) {
     return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
+}
+
+function gameOverEnabled() {
+    return enableGameOver;
 }
 
 function collisionBallQuad(ball, quad) {
@@ -440,12 +457,14 @@ function initGamePaddle() {
     paddle = new Paddle(new Quad(new Vec2(field.position.x + (field.size.x-paddleWidth)/2, field.position.y + field.size.y - paddleHeight - paddleYOffset), new Vec2(paddleWidth, paddleHeight), ballNeutralColor), 500, 0);
 }
 
-function initColors() {
+function initStyles() {
     switch(gameLevel) {
         case levelStyleClassic:
             ball.color = new Color(255, 255, 255);
             paddle.quad.color = ball.color;
             bgColor = new Color(0, 0, 0);
+            scoreBoardPos = add(field.position, new Vec2(8, 20));
+            scoreColor = new Color(255, 255, 255);
             break;
         default:
             //Pick random (bright) color
@@ -455,16 +474,16 @@ function initColors() {
             paddle.quad.color = randColor;
             //Set background color to inverse of ball color (guranteed dark)
             bgColor = rgbInverse(randColor); 
+            scoreBoardPos = new Vec2(8, 20);
             break;
     }
 }
 
 function initGameState() {
-    alert("init");
     initField();
     initGamePaddle();
     initGameBall();
-    initColors();
+    initStyles();
     buildTheWall();
     //Initialize inputs
     rtDown = ltDown = false;
