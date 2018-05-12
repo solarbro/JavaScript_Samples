@@ -226,15 +226,15 @@ function buildGround() {
 }
 
 function waitForSceneRefresh() {
-    if(pauseAfterCreation) {
-        alert("Waiting for scene refresh request");
-        processComplete = true;
-    } else {
+    // if(pauseAfterCreation) {
+    //     alert("Waiting for scene refresh request");
+    //     processComplete = true;
+    // } else {
         //If auto refresh run timer
         //Check for input state
         ++pauseTimer;
         if(pauseTimer >= pauseDuration) {
             processComplete = true;
         }
-    }
+    //}
 }
