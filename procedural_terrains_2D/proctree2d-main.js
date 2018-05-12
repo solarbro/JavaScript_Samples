@@ -237,9 +237,10 @@ function subDiv(vertices, iteration, variance) {
     tmpArray[2 * (numVerts - 1)] = vertices[numVerts - 1];
 
     //recursive call
-    subDiv(tmpArray, iteration + 1, variance / 2.25);
+    subDiv(tmpArray, iteration + 1, variance / 2.5);
     //Copy results back
     var newNumVerts = tmpArray.length;
+    // alert("After subdiv: " + newNumVerts);
     for(var i = 0; i < newNumVerts; ++i) {
         vertices[i] = tmpArray[i];
     }
