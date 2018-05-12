@@ -4,7 +4,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 //acquire context
 const ctx = canvas.getContext('2d');
-const frameTime = 16; //locked 16ms per frame
+const frameTime = 1000; //locked 16ms per frame
 
 //Containers
 function Color(r, g, b) {
@@ -15,30 +15,32 @@ function Color(r, g, b) {
 
 //Game state
 //options
-const pauseAfterCreation = false;
-const randomColorOnBounce = false;  
+const pauseAfterCreation = true;
 const pauseDuration = 5; //pause for some seconds after each tree is completed
-const rootLocation = new Vec2(canvas.width / 2, canvas.height * 0.9);
-const groundSubDivs = 12;
-const heightVariance = canvas.height / 8;
+const groundSubDivs = 10;
+const maxHeightVariance = canvas.height / 4;
+const minHeightVariance = canvas.height / 16;
+const minDecay = 1.1;
+const maxDecay = 3.3;
 //Game state enum
 const init = 0;
 const load = 1;
-const grow = 2;
-const complete = 3;
-const unload = 4;
-//tree styles
-var angleVariance = Math.PI * Math.random() * 0.5; //+/- 90 degrees max
-//Scene style
+const complete = 2;
 
 //Game state
-var gameState = unload;
+var gameState = init;
 var processComplete = false;
 
 //Field
-var branches = [];
+var bgColor = new Color(0, 0, 0);
+var groundVertices = [];
+var subDivIteration = 0;
+var backupHeightVariance;
+var currentHeightVariance = 0;
+var decay = 2.5;
+//UI
+var pauseTimer = 0;
 //----------
-
 main();
 
 //
@@ -48,28 +50,19 @@ function main() {
     setInterval(updateGameState, frameTime);
 }
 
-function drawStar(location, brightness) {
-    //Draw star (number of arms depends on brightness)
-}
-
-function drawMoon(location, phase) {
-    //draw moon based on phase
-}
-
-function drawSun(location, color) {
-    //draw circle of given color
-}
-
-function drawRandomCloud(location, size) {
-    //generate random cloud shape within the specified bounds
-}
-
 function drawBackground() {
     ctx.beginPath();
     ctx.rect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = rgbToHex(getRandColor());
+    ctx.fillStyle = rgbToHex(bgColor);
     ctx.fill();
     ctx.closePath();
+
+    //Debug info
+    ctx.font = "30px Arial";
+    ctx.fillStyle = rgbToHex(rgbInverse(bgColor));
+    ctx.fillText("Variance : " + backupHeightVariance.toFixed(2), 10, 50);
+    ctx.fillText("Noise    : " + ((1 - (decay - minDecay) / (maxDecay - minDecay)) * 100).toFixed(2), 10, 80);
+    ctx.fillText("Iteration: " + subDivIteration, 10, 110); 
 }
 
 function drawField(vertices) {
@@ -97,59 +90,38 @@ function drawField(vertices) {
 function drawStaticElements() {
     drawBackground();
     buildGround();
-    //debug draw
-    drawRoot();
-}
-
-function drawLeaf(position, direction, size) {
-    //Losange?
-}
-
-function drawBranch(start, startWidth, end, endWidth) {
-
-}
-
-function drawRoot() {
-    ctx.beginPath();
-    ctx.arc(rootLocation.x,rootLocation.y, 10, 0, 2*Math.PI);
-    ctx.fillStyle = "#ff0000";
-    ctx.fill();
-    ctx.closePath();
+    //debug draw (control points?)
 }
 
 function updateGameState() {
     switch(gameState) {
         case init:
-            //Start with unload, because it sets the initial scene options
-            gameState = unload;
+            //alert("init");
+            //Reset to initial params
+            subDivIteration = 0;
+            currentHeightVariance = minHeightVariance + Math.random() * (maxHeightVariance - minHeightVariance);
+            backupHeightVariance = currentHeightVariance;
+            decay = minDecay + Math.random() * (maxDecay - minDecay);
+            bgColor = getRandColor();
+            //Clear vertices
+            groundVertices = [];
+            //Change state
+            gameState = load;
             break;
         case load:
-            initGameState();
-            if(processComplete) {
-                gameState = grow;
-                processComplete = false;
-            }
-            break;
-        case grow:
-            growTree();
-            if(processComplete) {
+            //alert("load");
+            //Fill the screen with static elements
+            drawStaticElements();
+            if(subDivIteration >= groundSubDivs) {
                 gameState = complete;
-                processComplete = false;
+                pauseTimer = 0;
             }
             break;
         case complete:
             waitForSceneRefresh();
             if(processComplete) {
-                gameState = unload;
-                processComplete = false;
+                gameState = init;
             }
-            break;
-        case unload:
-            //define what this scene is going to look like
-            setSceneOptions();
-            //Fill the screen with static elements
-            drawStaticElements();
-            gameState = load;
             break;
         default:
             alert("WTF!!");
@@ -198,14 +170,6 @@ function getRandColor() {
     return new Color(getRandInt(0, 255), getRandInt(0, 255), getRandInt(0, 255));
 }
 
-function getRandBranchColor() {
-
-}
-
-function getRandLeafColor() {
-
-}
-
 function rgbInverse(inColor) {
     return new Color(255 - inColor.r, 255 - inColor.g, 255 - inColor.b);
 }
@@ -214,81 +178,63 @@ function rgbToHex(rgb) {
     return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
 }
 
-function subDiv(vertices, iteration, variance) {
-    //End recursion
-    if(iteration >= groundSubDivs) {
-        return;
-    }
-
+function subDiv() {
     //temporary array to store the vertices in
     var tmpArray = [];
-    var numVerts = vertices.length;
+    var numVerts = groundVertices.length;
     //Subdivide each segment
     for(var i = 0; i < numVerts - 1; ++i) {
-        tmpArray[2 * i] = vertices[i];
-        var subVert = mul(add(vertices[i], vertices[i + 1]), 0.5);
+        tmpArray[2 * i] = groundVertices[i];
+        var subVert = mul(add(groundVertices[i], groundVertices[i + 1]), 0.5);
         var bias = 0;
-        if(canvas.height < subVert.y + variance)
+        if(canvas.height < subVert.y + currentHeightVariance)
             bias = canvas.height - subVert.y;
-        subVert.y = subVert.y + getRandInt(-variance - bias, variance - bias);
+        subVert.y = subVert.y + getRandInt(-currentHeightVariance - bias, currentHeightVariance - bias);
         tmpArray[2 * i + 1] = subVert;
     }
     //Push the last vertex as is
-    tmpArray[2 * (numVerts - 1)] = vertices[numVerts - 1];
+    tmpArray[2 * (numVerts - 1)] = groundVertices[numVerts - 1];
 
-    //recursive call
-    subDiv(tmpArray, iteration + 1, variance / 2.5);
     //Copy results back
     var newNumVerts = tmpArray.length;
     // alert("After subdiv: " + newNumVerts);
     for(var i = 0; i < newNumVerts; ++i) {
-        vertices[i] = tmpArray[i];
+        groundVertices[i] = tmpArray[i];
     }
 }
 
 function buildGround() {
     //Create initial 3 vertex mesh
-    var groundVertices = [];
-    groundVertices[0] = new Vec2(0, rootLocation.y + getRandInt(-heightVariance, heightVariance));
-    groundVertices[1] = rootLocation;
-    groundVertices[2] = new Vec2(canvas.width, rootLocation.y + getRandInt(-heightVariance, heightVariance));
-
-    //begin recursion
-    subDiv(groundVertices, 1, heightVariance);
-
+    if(subDivIteration == 0) {
+        //Add initial vertices
+        //TODO: give more flexibility
+        const rootLocation = new Vec2(canvas.width / 2, canvas.height * 0.75);
+        groundVertices[0] = new Vec2(0, rootLocation.y + getRandInt(-currentHeightVariance, currentHeightVariance));
+        //groundVertices[1] = rootLocation;
+        groundVertices[1] = new Vec2(canvas.width, rootLocation.y + getRandInt(-currentHeightVariance, currentHeightVariance));
+    }
+    else{
+        //Do a single subdivision step
+        subDiv();
+    }
+    //Draw the terrain
     drawField(groundVertices);
-}
-
-function genSeeds() {
-    //fill out array of branches
-    alert("generating seeds!");
-}
-
-function genSky() {
-    alert("generating sky...");
-}
-
-function initGameState() {
-    alert("Generating static scene...");
-    processComplete = true;
-}
-
-function setSceneOptions() {
-    alert("Generating random scene options...");
-    //Pick time of day
-    //Pick moon phase (if night)
-    //Pick weather conditions
-    genSeeds();
-}
-
-function growTree() {
-    alert("growing tree...");
-    processComplete = true;
+    //Increment iteration count
+    ++subDivIteration;
+    //Reduce noise level for the next iteration
+    currentHeightVariance = currentHeightVariance / decay;
 }
 
 function waitForSceneRefresh() {
-    alert("Waiting for scene refresh request");
-    //If auto refresh run timer
-    //Check for input state
-    processComplete = true;
+    if(pauseAfterCreation) {
+        alert("Waiting for scene refresh request");
+        processComplete = true;
+    } else {
+        //If auto refresh run timer
+        //Check for input state
+        ++pauseTimer;
+        if(pauseTimer >= pauseDuration) {
+            processComplete = true;
+        }
+    }
 }
