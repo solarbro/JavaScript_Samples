@@ -32,13 +32,13 @@ const maxAngleVariance = Math.PI / 2;
 const animationFrames = 60; //number of frames it will take to grow a branch
 var growthAnimation = 0;
 //Game state enum
-const init = 0;
-const load = 1;
-const grow = 2;
-const complete = 3;
-const unload = 4;
+const load = 0;
+const grow = 1;
+const complete = 2;
+const unload = 3;
 //tree styles
 var angleVariance = 0;
+var decay = 0.75;
 //tree growth state
 var branches = [];
 //Scene style
@@ -49,6 +49,7 @@ var numClouds = 0;
 //Game state
 var gameState = unload;
 var processComplete = false;
+var pauseTimer = 0;
 
 //Field
 //----------
@@ -59,7 +60,8 @@ main();
 // Game code
 //
 function main() {
-    setInterval(updateGameState, frameTime);
+    //setInterval(updateGameState, frameTime);
+    requestAnimationFrame(updateGameState);
 }
 
 function drawStar(location, brightness) {
@@ -115,26 +117,35 @@ function drawStaticElements() {
     drawRoot();
 }
 
-function drawLeaf(position, direction, size) {
-    //Losange?
+function drawLeaf(start, end, width) {
+    ctx.strokeStyle = "#009900"; 
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
 }
 
-function drawBranch(start, startWidth, end, endWidth) {
-
+function drawBranch(start, end, startWidth, endWidth) {
+    ctx.strokeStyle = "#000000"; 
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
 }
 
 function drawCurrentBranches() {
     ctx.beginPath();
-    ctx.strokeStyle = "#000000";
+    
     //Draw each branch
     var numBranches = branches.length;
     for(var i = 0; i < numBranches; ++i) {
         var branch = branches[i];
-        ctx.moveTo(branch.start.x, branch.start.y);
-        ctx.lineTo(branch.current.x, branch.current.y);
+        if(branch.complexity > 0) {
+            drawBranch(branch.start, branch.current, 0, 0); //TODO, calculate widths
+        }
+        else {
+            drawLeaf(branch.start, branch.current, 0); //TODO: pass random leaf size
+        }
         branch.current = add(branch.current, branch.animStep);
     }
-    ctx.stroke();
     ctx.closePath();
 
     //Update animation state
@@ -151,19 +162,17 @@ function drawRoot() {
 
 function updateGameState() {
     switch(gameState) {
-        case init:
-            //Start with unload, because it sets the initial scene options
-            gameState = unload;
-            break;
         case load:
             initGameState();
             if(processComplete) {
                 gameState = grow;
                 processComplete = false;
+                requestAnimationFrame(updateGameState);
             }
             break;
         case grow:
             growTree();
+            requestAnimationFrame(updateGameState);
             if(processComplete) {
                 gameState = complete;
                 processComplete = false;
@@ -174,6 +183,7 @@ function updateGameState() {
             if(processComplete) {
                 gameState = unload;
                 processComplete = false;
+                requestAnimationFrame(updateGameState);
             }
             break;
         case unload:
@@ -182,6 +192,7 @@ function updateGameState() {
             //Fill the screen with static elements
             drawStaticElements();
             gameState = load;
+            requestAnimationFrame(updateGameState);
             break;
         default:
             alert("WTF!!");
@@ -301,7 +312,7 @@ function genSeeds() {
     //fill out array of branches
     //alert("generating seeds!");
     //TODO: randomize growth params
-    branches[0] = new Branch(rootLocation, add(rootLocation, new Vec2(0, -100)), 3, false);
+    branches[0] = new Branch(rootLocation, add(rootLocation, new Vec2(0, -200)), 10, false);
 }
 
 function genSky() {
@@ -347,10 +358,10 @@ function growCurrentBranches() {
             //For now, we always split a branch equally left and right
             //1
             var lDir = rotate(branch.animStep, Math.PI / 4);
-            tmpBranches.push(new Branch(branch.current, add(branch.current, mul(lDir, animationFrames)), branch.complexity - 1));
+            tmpBranches.push(new Branch(branch.current, add(branch.current, mul(lDir, animationFrames * decay)), branch.complexity - 1));
             //2
             var rDir = rotate(branch.animStep, -Math.PI / 4);
-            tmpBranches.push(new Branch(branch.current, add(branch.current, mul(rDir, animationFrames)), branch.complexity - 1));
+            tmpBranches.push(new Branch(branch.current, add(branch.current, mul(rDir, animationFrames * decay)), branch.complexity - 1));
         }
     }
     //Replace branches with this new array
