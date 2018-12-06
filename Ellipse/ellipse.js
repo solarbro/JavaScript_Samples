@@ -1,6 +1,3 @@
-
-const debugMode = true;
-
 const canvas = document.getElementById(canvas_id);
 //Clamp canvas width to 480
 var aspect = canvas.width / canvas.height;
@@ -45,8 +42,23 @@ function main() {
         if(refreshImage) {
             updateScene();
         }
-      }, false);
-      updateScene();
+    }, false);
+
+    canvas.addEventListener("mousedown", function(evt) {
+        if(evt.button == 0) {
+            mouseLClickState = true;
+            updateScene();
+        }
+    }, false);
+
+    canvas.addEventListener("mouseup", function(evt) {
+        if(evt.button == 0) {
+            mouseLClickState = false;
+            updateScene();
+        }
+    }, false);
+
+    updateScene();
 }
 
 function drawBackground() {
@@ -133,27 +145,43 @@ function drawAxis(axis) {
 
 function drawEllipse() {
     //Calculate center
-    var center = mul(add(focA, focB), 0.5);
+    var median = mul(add(focA, focB), 0.5);
+    var center = toScreenCoords(median);
 
     //Calculate rotation
     var BminusA = sub(focB, focA);
-    var lenAB = norm(BminusA);
-    var majorAxis = mul(BminusA, 1 / lenAB);
-    const xAxis = new Vec2(1, 0);
-    var rotation = Math.acos(dot(majorAxis, xAxis));
+    BminusA = normalize(BminusA);
+    var rotation = -Math.atan2(BminusA.y, BminusA.x);
 
     //Calculate major radius
     var majorRad = radiusSum * 0.5 * zoom;
 
     //Calculate minor radius
-    var lenACSq = normSq(sub(center, focA));
+    var lenACSq = normSq(sub(median, focA));
     var halfRadSq = (radiusSum * 0.5) * (radiusSum * 0.5);
     var minorRad = Math.sqrt(halfRadSq - lenACSq) * zoom;
 
-    //Draw
+    //Draw major axis
+    ctx.beginPath();
+    ctx.strokeStyle = "#aa3311";
+    ctx.moveTo(center.x - BminusA.x * majorRad, center.y + BminusA.y * majorRad);
+    ctx.lineTo(center.x + BminusA.x * majorRad, center.y - BminusA.y * majorRad);
+    ctx.stroke();
+    ctx.closePath();
+
+    //Draw minor axis
+    ctx.beginPath();
+    ctx.strokeStyle = "#11aa33";
+    var minAxis = new Vec2(BminusA.y, -BminusA.x);
+    ctx.moveTo(center.x - minAxis.x * minorRad, center.y + minAxis.y * minorRad);
+    ctx.lineTo(center.x + minAxis.x * minorRad, center.y - minAxis.y * minorRad);
+    ctx.stroke();
+    ctx.closePath();
+
+    //Draw ellipse
     ctx.beginPath();
     ctx.strokeStyle = "#4488ff";
-    ctx.ellipse(canvas.width / 2 + center.x, canvas.height / 2 + center.y, majorRad, minorRad, rotation, 0, Math.PI * 2);
+    ctx.ellipse(center.x, center.y, majorRad, minorRad, rotation, 0, Math.PI * 2);
     ctx.stroke();
     ctx.closePath();
 }
@@ -204,10 +232,18 @@ function drawControls() {
                 pos = C;
                 break;
         }
+
+        var highlightColor = "#aa2211";
         ctx.beginPath();
-        ctx.strokeStyle = "#ff8844";
         ctx.ellipse(pos.x, pos.y, pointSize * 1.5, pointSize * 1.5, 0, 0, Math.PI * 2);
-        ctx.stroke();
+        if(!mouseLClickState) {
+            ctx.strokeStyle = highlightColor;
+            ctx.stroke();
+        }
+        else {
+            ctx.fillStyle = highlightColor;
+            ctx.fill();
+        }
         ctx.closePath();
     }
 }
@@ -243,25 +279,43 @@ function updateScene() {
 function updateControls() {
     refreshImage = true;
 
-    //Check against point A
-    if(checkPointonPoint(mousePos, focA)) {
-        selection = 1;
-    }
-    else if(checkPointonPoint(mousePos, focB)) {
-        selection = 2;
-    }
-    else if(checkPointonPoint(mousePos, radCtrl)) {
-        selection = 3;
-    }
-    else {
-        selection = 0;
-    }
+    //If already clicked move selected point
+    if(mouseLClickState) {
+        if(selection == 1) {
+            focA = mousePos;
+        }
+        else if(selection == 2) {
+            focB = mousePos;
+        }
+        else if(selection == 3) {
+            radCtrl = mousePos;
+        }
 
-    if(selection > 0) {
-        document.body.style.cursor = "pointer";
+        if(selection > 0) {
+            radiusSum = norm(sub(radCtrl, focA)) + norm(sub(radCtrl, focB));
+        }
     }
     else {
-        document.body.style.cursor = "default";
+        //Check against point A
+        if(checkPointonPoint(mousePos, focA)) {
+            selection = 1;
+        }
+        else if(checkPointonPoint(mousePos, focB)) {
+            selection = 2;
+        }
+        else if(checkPointonPoint(mousePos, radCtrl)) {
+            selection = 3;
+        }
+        else {
+            selection = 0;
+        }
+
+        if(selection > 0) {
+            document.body.style.cursor = "pointer";
+        }
+        else {
+            document.body.style.cursor = "default";
+        }
     }
 }
 
