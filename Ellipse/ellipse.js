@@ -37,13 +37,10 @@ main();
 //
 function main() {
     canvas.addEventListener('mousemove', onMouseMove, false);
-    canvas.addEventListener("touchmove", onMouseMove, false);
-
     canvas.addEventListener("mousedown", onMouseDown, false);
-    canvas.addEventListener("touchstart", onMouseDown, false);
-
     canvas.addEventListener("mouseup", onMouseUp, false);
-    canvas.addEventListener("touchend", onMouseUp, false);
+
+    canvas.addEventListener("touchstart", onTouchTap, false);
 
     updateScene();
 }
@@ -388,6 +385,15 @@ function onMouseMove(evt) {
 function onMouseDown(evt) {
     if(evt.button == 0) {
         mouseLClickState = true;
+        updateScene();
+    }
+}
+
+function onTouchTap(evt) {
+    mouseLClickState = !mouseLClickState;
+    mousePos = toSceneCoords(getMousePos(canvas, evt));
+    updateControls();
+    if(refreshImage) {
         updateScene();
     }
 }
