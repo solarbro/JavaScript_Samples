@@ -6,7 +6,6 @@ canvas.width = Math.min(canvas.width, maxCanvasWidth);
 canvas.height = canvas.width / aspect;
 //acquire context
 const ctx = canvas.getContext('2d');
-const frameTime = 1000; //locked 16ms per frame
 
 //Containers
 function Color(r, g, b) {
@@ -15,8 +14,9 @@ function Color(r, g, b) {
     this.b = b;
 }
 const textColor = "#888888";
-const textStyle = "10px Arial";
+const textStyle = "20px Arial";
 const pointSize = 5;
+const offsetScale = 0.5;
 
 //Ellipse controls state
 var focA = new Vec2(-2, 0);
@@ -233,9 +233,18 @@ function drawControls() {
 }
 
 function drawControlText() {
+    // alert("Draw control Start");
     //Draw coordinate values of focal points
+    ctx.font = textStyle;
+    ctx.fillStyle = "#000000";
+    drawPointLabel("F1", focA, getLabelOffset(1));
+    drawPointLabel("F2", focB, getLabelOffset(2));
+    drawPointLabel("P", radCtrl, getLabelOffset(3));
     //Draw radius value
-    //Major and minor axis lengths
+    drawRadiusLabel(focA, radCtrl, "d1");
+    drawRadiusLabel(radCtrl, focB, "d2");
+    //radius sum
+    ctx.fillText("d1 + d2 = " + +radiusSum.toFixed(2), 20, 20);
 
     if(debugMode) {
         //Debug mouse pos
@@ -244,6 +253,37 @@ function drawControlText() {
         ctx.fillStyle = textColor;
         ctx.fillText(message, 10, 20);
     }
+    // alert("Draw control End");
+}
+
+function drawPointLabel(text, point, offset) {
+    // alert(text);
+    var textLoc = add(point, offset);
+    textLoc = toScreenCoords(textLoc);
+    var pointRounded = new Vec2(+point.x.toFixed(2), +point.y.toFixed(2));
+    ctx.fillText(text + "(" + pointRounded.x + "," + pointRounded.y + ")", textLoc.x, textLoc.y);
+}
+
+function drawRadiusLabel(point1, point2, label) {
+    var dLoc = mul(add(point1, point2), 0.5);
+    var dOff = new Vec2(point1.y - point2.y, point2.x - point1.x);
+    dOff = mul(normalize(dOff), offsetScale * 0.5);
+    dLoc = toScreenCoords(add(dLoc, dOff));
+    ctx.fillText(label, dLoc.x - 10, dLoc.y);
+}
+
+function getLabelOffset(label) {
+    switch (label) {
+        case 1:
+            return new Vec2(0, -offsetScale);
+        case 2:
+            return new Vec2(0, -offsetScale);
+        case 3:
+            return new Vec2(0, offsetScale);
+        default:
+            break;
+    }
+    return new Vec2(0, 0);
 }
 
 function getMousePos(canvas, evt) {
@@ -261,7 +301,6 @@ function updateScene() {
 }
 
 function updateControls() {
-    refreshImage = true;
 
     //If already clicked move selected point
     if(mouseLClickState) {
@@ -277,9 +316,11 @@ function updateControls() {
 
         if(selection > 0) {
             radiusSum = norm(sub(radCtrl, focA)) + norm(sub(radCtrl, focB));
+            refreshImage = true;
         }
     }
     else {
+        var current_selection = selection;
         //Check against point A
         if(checkPointonPoint(mousePos, focA)) {
             selection = 1;
@@ -299,6 +340,10 @@ function updateControls() {
         }
         else {
             document.body.style.cursor = "default";
+        }
+
+        if(selection != current_selection) {
+            refreshImage = true;
         }
     }
 }
@@ -339,22 +384,6 @@ function dot(v0, v1) {
 }
 
 //utils
-function getRandInt(start, end) {
-    return start + Math.floor(Math.random() * Math.floor(end - start));
-}
-
-function getRandColor() {
-    return new Color(getRandInt(0, 255), getRandInt(0, 255), getRandInt(0, 255));
-}
-
-function rgbInverse(inColor) {
-    return new Color(255 - inColor.r, 255 - inColor.g, 255 - inColor.b);
-}
-
-function rgbToHex(rgb) {
-    return "#" + ((1 << 24) + (rgb.r << 16) + (rgb.g << 8) + rgb.b).toString(16).slice(1);
-}
-
 function toScreenCoords(point) {
     const translate = new Vec2(canvas.width / 2, canvas.height / 2);
     var result = add(mul(point, zoom), translate);
