@@ -36,27 +36,14 @@ main();
 // App entry point
 //
 function main() {
-    canvas.addEventListener('mousemove', function(evt) {
-        mousePos = toSceneCoords(getMousePos(canvas, evt));
-        updateControls();
-        if(refreshImage) {
-            updateScene();
-        }
-    }, false);
+    canvas.addEventListener('mousemove', onMouseMove, false);
+    canvas.addEventListener("touchmove", onMouseMove, false);
 
-    canvas.addEventListener("mousedown", function(evt) {
-        if(evt.button == 0) {
-            mouseLClickState = true;
-            updateScene();
-        }
-    }, false);
+    canvas.addEventListener("mousedown", onMouseDown, false);
+    canvas.addEventListener("touchstart", onMouseDown, false);
 
-    canvas.addEventListener("mouseup", function(evt) {
-        if(evt.button == 0) {
-            mouseLClickState = false;
-            updateScene();
-        }
-    }, false);
+    canvas.addEventListener("mouseup", onMouseUp, false);
+    canvas.addEventListener("touchend", onMouseUp, false);
 
     updateScene();
 }
@@ -387,4 +374,27 @@ function checkPointonPoint(point0, point1) {
     const threshold = (pointSize / zoom) * (pointSize / zoom);
     var distSq = normSq(sub(point1, point0));
     return distSq <= threshold;
+}
+
+//Event handlers
+function onMouseMove(evt) {
+    mousePos = toSceneCoords(getMousePos(canvas, evt));
+    updateControls();
+    if(refreshImage) {
+        updateScene();
+    }
+}
+
+function onMouseDown(evt) {
+    if(evt.button == 0) {
+        mouseLClickState = true;
+        updateScene();
+    }
+}
+
+function onMouseUp(evt) {
+    if(evt.button == 0) {
+        mouseLClickState = false;
+        updateScene();
+    }
 }
