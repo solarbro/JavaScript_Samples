@@ -23,6 +23,8 @@ var focA = new Vec2(-2, 0);
 var focB = new Vec2(2, 0);
 var radiusSum = 6;
 var radCtrl = new Vec2(0, Math.sqrt(5));
+var majorAxis = evalMajorAxis();
+var minorAxis = evalMinorAxis();
 
 //App state
 var refreshImage = false;
@@ -138,12 +140,10 @@ function drawEllipse() {
     var rotation = -Math.atan2(BminusA.y, BminusA.x);
 
     //Calculate major radius
-    var majorRad = radiusSum * 0.5 * zoom;
+    var majorRad = majorAxis * zoom;
 
     //Calculate minor radius
-    var lenACSq = normSq(sub(median, focA));
-    var halfRadSq = (radiusSum * 0.5) * (radiusSum * 0.5);
-    var minorRad = Math.sqrt(halfRadSq - lenACSq) * zoom;
+    var minorRad = minorAxis * zoom;
 
     //Draw major axis
     ctx.beginPath();
@@ -304,18 +304,29 @@ function updateControls() {
 
     //If already clicked move selected point
     if(mouseLClickState) {
-        if(selection == 1) {
+        var freezeState = getCheckboxState("freeze");
+        
+        if(selection == 1 && !freezeState) {
             focA = mousePos;
         }
-        else if(selection == 2) {
+        else if(selection == 2 && !freezeState) {
             focB = mousePos;
         }
         else if(selection == 3) {
-            radCtrl = mousePos;
+            if(freezeState) {
+                var position = normalize(mousePos);
+                var angle = Math.atan2(position.y, position.x);
+                radCtrl = getPointOnEllipse(angle);
+            }
+            else {
+                radCtrl = mousePos;
+            }
         }
 
         if(selection > 0) {
             radiusSum = norm(sub(radCtrl, focA)) + norm(sub(radCtrl, focB));
+            majorAxis = evalMajorAxis();
+            minorAxis = evalMinorAxis();
             refreshImage = true;
         }
     }
@@ -438,4 +449,37 @@ function onMouseUp(evt) {
         mouseLClickState = false;
         updateScene();
     }
+}
+
+function getCheckboxState(name) {
+    var inputElement = document.getElementById(name);
+    if(inputElement == null) {
+        console.warn("Element not found");
+    }
+    return inputElement.checked;
+}
+
+function evalMajorAxis() {
+    return radiusSum * 0.5;
+}
+
+function evalMinorAxis() {
+    var median = mul(add(focA, focB), 0.5);
+    var lenACSq = normSq(sub(median, focA));
+    var halfRadSq = (radiusSum * 0.5) * (radiusSum * 0.5);
+    return Math.sqrt(halfRadSq - lenACSq);
+}
+
+function getPointOnEllipse(angle) {
+    var majorAxisVec = normalize(sub(focB, focA));
+    var axisAngle = Math.atan2(majorAxisVec.y, majorAxisVec.x);
+    var localAngle = angle - axisAngle;
+    var localPos = new Vec2(majorAxis * Math.cos(localAngle), minorAxis * Math.sin(localAngle));
+    var center = mul(add(focA, focB), 0.5);
+    var rotatedPos = new Vec2(0, 0);
+    var cosa = Math.cos(axisAngle);
+    var sina = Math.sin(axisAngle);
+    rotatedPos.x = cosa * localPos.x - sina * localPos.y;
+    rotatedPos.y = sina * localPos.x + cosa * localPos.y;
+    return add(rotatedPos, center);
 }
