@@ -432,12 +432,6 @@ function onMouseDown(evt) {
 function onTouchTap(evt) {
     mousePos = toSceneCoords(getMousePos(canvas, evt));
     updateControls();
-    if(mouseLClickState) {
-        alert("unselect");
-    }
-    else{
-        alert("select");
-    }
     mouseLClickState = !mouseLClickState;
     if(refreshImage) {
         updateScene();
