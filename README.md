@@ -5,4 +5,5 @@
 2. [Procedural 2D Terrains](https://solarbro.github.io/JavaScript_Samples/procedural_terrains_2D/)
 3. [Procedural 2D Trees](https://solarbro.github.io/JavaScript_Samples/procedural_trees_2D/)
 4. [Ellipse](https://solarbro.github.io/JavaScript_Samples/Ellipse/)
+5. [Polygonal Circle](https://solarbro.github.io/JavaScript_Samples/PolygonalCircle/)
 
