@@ -20,7 +20,6 @@ var selectedVertex = -1;
 
 //HTML elements
 var polygonElem;
-var polygon2Elem;
 var polyTypeElem;
 
 main();
@@ -41,12 +40,10 @@ function main() {
     //Query elements on document load
     window.onload = function() {
         polygonElem = document.getElementById("polygon_name");
-        polygon2Elem = document.getElementById("polygon_name_2");
         polyTypeElem = document.getElementById("polygon_type");
 
         //Clear fields
         polygonElem.textContent = "";
-        polygon2Elem.textContent = "";
         polyTypeElem.textContent = "";
     }
 
@@ -207,7 +204,6 @@ function identifyShape() {
 
     if(numVertices < 3) {
         polygonElem.textContent = "";
-        polygon2Elem.textContent = "";
         return;
     }
 
@@ -241,10 +237,7 @@ function identifyShape() {
     }
 
     name = name.charAt(0).toUpperCase() + name.slice(1);
-    polygonElem.textContent = name;
-
-    //secondary name
-    polygon2Elem.textContent = "(" + numVertices + " sides)";
+    polygonElem.textContent = name + " (" + numVertices + " sides)";
 }
 
 function identifyType() {
