@@ -207,6 +207,7 @@ function identifyShape() {
 
     if(numVertices < 3) {
         polygonElem.textContent = "";
+        polygon2Elem.textContent = "";
         return;
     }
 
