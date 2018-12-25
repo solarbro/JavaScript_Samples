@@ -20,6 +20,7 @@ var selectedVertex = -1;
 
 //HTML elements
 var polygonElem;
+var polygon2Elem;
 var polyTypeElem;
 
 main();
@@ -40,10 +41,12 @@ function main() {
     //Query elements on document load
     window.onload = function() {
         polygonElem = document.getElementById("polygon_name");
+        polygon2Elem = document.getElementById("polygon_name_2");
         polyTypeElem = document.getElementById("polygon_type");
 
         //Clear fields
         polygonElem.textContent = "";
+        polygon2Elem.textContent = "";
         polyTypeElem.textContent = "";
     }
 
@@ -238,6 +241,9 @@ function identifyShape() {
 
     name = name.charAt(0).toUpperCase() + name.slice(1);
     polygonElem.textContent = name;
+
+    //secondary name
+    polygon2Elem.textContent = "(" + numVertices + " sides)";
 }
 
 function identifyType() {
@@ -268,11 +274,35 @@ function identifyType() {
     }
 
     if(isConcave) {
-        polyTypeElem.textContent = "Concave";
+        //Check for intersection between edges
+        if(checkEdgeIntersections()) {
+            polyTypeElem.textContent = "Complex";
+        }
+        else {
+            polyTypeElem.textContent = "Concave";
+        }
     }
     else {
         polyTypeElem.textContent = "Convex";
     }
+}
+
+function checkEdgeIntersections() {
+    const numVertices = isBuilding ? vertices.length - 1 : vertices.length;
+    var hasIntersections = false;
+    for(var i = 0; i < numVertices - 1; ++i) {
+        var edge00 = i;
+        var edge01 = i + 1;
+        for(var j = i + 1; j < numVertices; ++j) {
+            var edge10 = j;
+            var edge11 = (j + 1) % numVertices;
+            if(checkSegmentIntersection(vertices[edge00], vertices[edge01], vertices[edge10], vertices[edge11])) {
+                hasIntersections = true;
+            }
+        }
+    }
+
+    return hasIntersections;
 }
 
 //Vector math
@@ -336,8 +366,6 @@ function onMouseClick(evt) {
 }
 
 function onMouseMove(evt) {
-    // console.warn("mouse moved");
-
     var mousePos = getMousePos(canvas, evt);
     if(isBuilding) {
         updateFloatingVertex(mousePos);
@@ -395,4 +423,39 @@ function rotationDirection(p0, p1, p2) {
 
     var crossProduct = cross(v0, v1);
     return crossProduct > 0;
+}
+
+function checkSegmentIntersection(e00, e01, e10, e11) {
+    var v0 = sub(e01, e00);
+    var v1 = sub(e11, e10);
+
+    //First check if they are parallel
+    //Parallel lines don't intersect
+    if(Math.abs(cross(v0, v1)) < 0.0001) {
+        return false;
+    }
+
+    //Solve the quadratic equation from the 2 lines
+    // e00_x + tv0_x = e10_x + sv1_x    (1)
+    // e00_y + tv0_y = e10_y + sv1_y    (2)
+    // where t and s are unknown.
+    var a = v0.x;
+    var b = -v1.x;
+    var c = e10.x - e00.x;
+    var d = v0.y;
+    var e = -v1.y;
+    var f = e10.y - e00.y;
+    var s = (-d * c + a * f) / (-d * b + a * e);
+    var t = (e10.x + s * v1.x - e00.x) / v0.x;
+
+    //debug
+    // ctx.beginPath();
+    // ctx.fillStyle = "#ff0000";
+    // ctx.arc(e00.x + t * v0.x, e00.y + t * v0.y, pointSize * 2, 0, 2 * Math.PI);
+    // ctx.fill();
+    // ctx.closePath();
+
+    //If both t and s are between 0 and 1, there's an intersection.
+    //But we want to ignore intersections at the edges, so let's add some arbitrary threshold.
+    return (t > 0.1 && t < 0.9) && (s > 0.1 && s < 0.9);
 }
