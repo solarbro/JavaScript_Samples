@@ -314,7 +314,8 @@ function updateControls() {
         }
         else if(selection == 3) {
             if(freezeState) {
-                var position = normalize(mousePos);
+                var center = mul(add(focA, focB), 0.5);
+                var position = normalize(sub(mousePos, center));
                 var angle = Math.atan2(position.y, position.x);
                 radCtrl = getPointOnEllipse(angle);
             }
