@@ -355,7 +355,11 @@ function onMouseClick(evt) {
         vertices.splice(0, vertices.length);
         isBuilding = true;
     }
+    //Update the selection state to prevent adding multiple vertices in the same place
+    updateFloatingVertex(getMousePos(canvas, evt));
+    //Update the display
     redrawScene();
+    //Identify the new polygon
     identifyShape();
     identifyType();
 }
