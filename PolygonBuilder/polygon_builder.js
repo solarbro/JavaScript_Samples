@@ -249,6 +249,12 @@ function identifyType() {
         return;
     }
 
+    //Check for intersection between edges
+    if(checkEdgeIntersections()) {
+        polyTypeElem.textContent = "Complex";
+        return;
+    }
+
     //Check the rotation direction of every side.
     //If any side rotates in a different direction than the others, the shape is concave.
     var isConcave = false;
@@ -269,13 +275,7 @@ function identifyType() {
     }
 
     if(isConcave) {
-        //Check for intersection between edges
-        if(checkEdgeIntersections()) {
-            polyTypeElem.textContent = "Complex";
-        }
-        else {
-            polyTypeElem.textContent = "Concave";
-        }
+        polyTypeElem.textContent = "Concave";
     }
     else {
         polyTypeElem.textContent = "Convex";
