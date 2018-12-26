@@ -199,7 +199,7 @@ function drawDirectionLabel() {
     var direction = rotationDirection(p0, p1, p2);
 
     ctx.font = textStyle;
-    ctx.fillStyle = textColor;
+    ctx.fillStyle = "#666666";
     var offset = pointSize * 4;
     var posx = p2.x + offset;
     var posy = p2.y - pointSize;
@@ -237,6 +237,18 @@ function drawAngle() {
     ctx.closePath();
 }
 
+function drawPointLabel(p, label) {
+    ctx.fillText(label, p.x - pointSize * 2, p.y + pointSize * 6);
+}
+
+function drawPointLabels() {
+    ctx.font = textStyle;
+    ctx.fillStyle = "#666666";
+    drawPointLabel(p0, "P0");
+    drawPointLabel(p1, "P1");
+    drawPointLabel(p2, "P2");
+}
+
 function redrawScene() {
     drawBackground();     //clear screen
     drawAngle();          //Draw the arc indicating the rotation amount
@@ -244,7 +256,8 @@ function redrawScene() {
     drawArrows();         //2 arrows p0 - p1 and p1 - p2
     drawSelection();      //draw highlight on selected vertex
     drawVertices();       //draw the vertices
-    drawDirectionLabel(); //Say whether the edge is turning left or right
+    drawPointLabels();    //label the points
+    drawDirectionLabel(); //say whether the edge is turning left or right
 }
 
 function appUpdate(mousePos) {
