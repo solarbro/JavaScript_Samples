@@ -48,7 +48,7 @@ function main() {
     }
 
     //clear canvas
-    drawBackground();
+    redrawScene();
 }
 
 function drawBackground() {
