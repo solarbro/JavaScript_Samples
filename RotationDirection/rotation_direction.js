@@ -368,6 +368,7 @@ function onMouseMove(evt) {
         ctx.font = textStyle;
         ctx.fillText("Mouse pos: " + mousePos.x + ", " + mousePos.y, 50, 50);
     }
+    evt.preventDefault();
 }
 
 function getMousePos(canvas, evt) {
