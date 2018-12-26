@@ -112,7 +112,12 @@ function drawVertices(vertices) {
     }
 
     //First vertex
-    ctx.fillStyle = "#228844";
+    if(isBuilding) {
+        ctx.fillStyle = "#228844";
+    }
+    else {
+        ctx.fillStyle = "#224488";
+    }
     ctx.beginPath();
     ctx.arc(vertices[0].x, vertices[0].y, pointSize, 0, 2 * Math.PI);
     ctx.fill();
@@ -161,11 +166,7 @@ function redrawScene() {
     drawPolygon(vertices, true);
     drawPolygon(vertices, false);
     drawSelection();
-    
-    if(isBuilding) {
-        drawVertices(vertices);
-    }
-
+    drawVertices(vertices);
     drawInstructions();
 }
 
