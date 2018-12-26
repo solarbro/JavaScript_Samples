@@ -7,4 +7,5 @@
 4. [Ellipse](https://solarbro.github.io/JavaScript_Samples/Ellipse/)
 5. [Polygonal Circle](https://solarbro.github.io/JavaScript_Samples/PolygonalCircle/)
 5. [Polygon Builder](https://solarbro.github.io/JavaScript_Samples/PolygonBuilder/)
+5. [Rotation Direction](https://solarbro.github.io/JavaScript_Samples/RotationDirection/)
 
