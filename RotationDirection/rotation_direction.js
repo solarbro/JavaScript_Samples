@@ -395,6 +395,8 @@ function onTouchMove(evt) {
     if(selection < 0 || selection > 2) {
         return;
     }
+    
+    evt.preventDefault();
     var touchPos = getTouchPos(canvas, evt);
     appUpdate(touchPos);
     redrawScene();
