@@ -35,6 +35,15 @@ function main() {
     //Register on mouse move event
     canvas.addEventListener("mousemove", onMouseMove, false);
 
+    //Register touch start event
+    canvas.addEventListener("touchstart", onTouchStart, false);
+
+    //Register touch end event
+    canvas.addEventListener("touchend", onTouchEnd, false);
+
+    //Register touch drag event
+    canvas.addEventListener("touchmove", onTouchMove, false);
+
     //clear canvas
     redrawScene();
 }
@@ -368,12 +377,37 @@ function onMouseMove(evt) {
         ctx.font = textStyle;
         ctx.fillText("Mouse pos: " + mousePos.x + ", " + mousePos.y, 50, 50);
     }
-    evt.preventDefault();
+}
+
+function onTouchStart(evt) {
+    var touchPos = getTouchPos(canvas, evt);
+    appUpdate(touchPos);
+    isMouseDown = true;
+}
+
+function onTouchEnd(evt) {
+    selection = -1;
+    isMouseDown = false;
+    redrawScene();
+}
+
+function onTouchMove(evt) {
+    if(selection < 0 || selection > 2) {
+        return;
+    }
+    var touchPos = getTouchPos(canvas, evt);
+    appUpdate(touchPos);
+    redrawScene();
 }
 
 function getMousePos(canvas, evt) {
     var rect = canvas.getBoundingClientRect();
     return new Vec2(evt.clientX - rect.left, evt.clientY - rect.top);
+}
+
+function getTouchPos(canvas, evt) {
+    var rect = canvas.getBoundingClientRect();
+    return new Vec2(evt.touches[0].clientX - rect.left, evt.touches[0].clientY - rect.top);
 }
 
 function checkPointCollision(point1, point2) {
