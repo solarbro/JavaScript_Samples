@@ -42,7 +42,9 @@ function main() {
     canvas.addEventListener("mousedown", onMouseDown, false);
     canvas.addEventListener("mouseup", onMouseUp, false);
 
+    canvas.addEventListener("touchmove", onTouchDrag, false);
     canvas.addEventListener("touchstart", onTouchTap, false);
+    canvas.addEventListener("touchend", onTouchEnd, false);
 
     updateScene();
 }
@@ -286,9 +288,14 @@ function getLabelOffset(label) {
     return new Vec2(0, 0);
 }
 
-function getMousePos(canvas, evt) {
+function getMousePos(canvas, evt, useTouch) {
     var rect = canvas.getBoundingClientRect();
-    return new Vec2(evt.clientX - rect.left, evt.clientY - rect.top);
+    if(useTouch) {
+        return new Vec2(evt.touches[0].clientX - rect.left, evt.touches[0].clientY - rect.top);
+    }
+    else {
+        return new Vec2(evt.clientX - rect.left, evt.clientY - rect.top);
+    }
 }
 
 function updateScene() {
@@ -300,8 +307,7 @@ function updateScene() {
     refreshImage = false;
 }
 
-function updateControls() {
-
+function updateControls(useTouch) {
     //If already clicked move selected point
     if(mouseLClickState) {
         var freezeState = getCheckboxState("freeze");
@@ -333,14 +339,15 @@ function updateControls() {
     }
     else {
         var current_selection = selection;
+        const selectionThreshold = useTouch ? pointSize * 3 : pointSize;
         //Check against point A
-        if(checkPointonPoint(mousePos, focA)) {
+        if(checkPointonPoint(mousePos, focA, selectionThreshold)) {
             selection = 1;
         }
-        else if(checkPointonPoint(mousePos, focB)) {
+        else if(checkPointonPoint(mousePos, focB, selectionThreshold)) {
             selection = 2;
         }
-        else if(checkPointonPoint(mousePos, radCtrl)) {
+        else if(checkPointonPoint(mousePos, radCtrl, selectionThreshold)) {
             selection = 3;
         }
         else {
@@ -408,16 +415,16 @@ function toSceneCoords(point) {
     return new Vec2(result.x / zoom, -result.y / zoom);
 }
 
-function checkPointonPoint(point0, point1) {
-    const threshold = (pointSize / zoom) * (pointSize / zoom);
+function checkPointonPoint(point0, point1, size) {
+    const threshold = (size / zoom) * (size / zoom);
     var distSq = normSq(sub(point1, point0));
     return distSq <= threshold;
 }
 
 //Event handlers
 function onMouseMove(evt) {
-    mousePos = toSceneCoords(getMousePos(canvas, evt));
-    updateControls();
+    mousePos = toSceneCoords(getMousePos(canvas, evt, false));
+    updateControls(false);
     if(refreshImage) {
         updateScene();
     }
@@ -431,9 +438,28 @@ function onMouseDown(evt) {
 }
 
 function onTouchTap(evt) {
-    mousePos = toSceneCoords(getMousePos(canvas, evt));
-    updateControls();
-    mouseLClickState = !mouseLClickState;
+    mousePos = toSceneCoords(getMousePos(canvas, evt, true));
+    mouseLClickState = false;
+    updateControls(true);
+}
+
+function onTouchEnd(evt) {
+    selection = 0;
+    updateScene();
+}
+
+function onTouchDrag(evt) {
+    //If no selection was made on touch start, don't drag anything
+    if(selection == 0) {
+        return;
+    }
+
+    evt.preventDefault();
+    mousePos = toSceneCoords(getMousePos(canvas, evt, true));
+    mouseLClickState = true;
+    updateControls(true);
+    mouseLClickState = false;
+    
     if(refreshImage) {
         updateScene();
     }
