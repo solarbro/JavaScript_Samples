@@ -38,7 +38,7 @@ function drawArray(values) {
 }
 
 function drawBlock(column, values, color) {
-	//Draw column
+	//Eval dimensions
 	var maxHeight = 0;
 	for(var i = 0; i < values.length; ++i) {
 		if(values[i] > maxHeight) {
@@ -49,10 +49,33 @@ function drawBlock(column, values, color) {
 	var stepX = (canvas.width - 2 * padding) / values.length;
 	var stepY = (canvas.height - 2 * padding) / maxHeight;
 
+	//Draw column
 	ctx.strokeStyle = color;
 	ctx.lineWidth = padding / 2;
 	ctx.beginPath();
 	ctx.rect(padding + stepX * column, canvas.height - padding, stepX - padding / 2, -stepY * values[column]);
+	ctx.stroke();
+	ctx.closePath();
+}
+
+function drawDivider(column, values, color) {
+	//Eval dimensions
+	var maxHeight = 0;
+	for(var i = 0; i < values.length; ++i) {
+		if(values[i] > maxHeight) {
+			maxHeight = values[i];
+		}
+	}
+
+	var stepX = (canvas.width - 2 * padding) / values.length;
+	var stepY = (canvas.height - 2 * padding) / maxHeight;
+
+	//Draw divider
+	ctx.strokeStyle = color;
+	ctx.lineWidth = padding / 4;
+	ctx.beginPath();
+	ctx.moveTo(padding * 0.75 + stepX * column, 0);
+	ctx.lineTo(padding * 0.75 + stepX * column, canvas.height);
 	ctx.stroke();
 	ctx.closePath();
 }

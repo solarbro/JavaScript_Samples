@@ -11,8 +11,6 @@ const DONE_SORT = 3;
 
 var state = START_SORT;
 
-// drawArray(valueList);
-// drawBlock(2, valueList, "#008800");
 init();
 
 function init() {
@@ -27,12 +25,6 @@ function doFunction() {
 	switch(state){
 	case INIT_ARRAY:
 		valueList = fillRandomArray(numValues, rangeStart, rangeEnd);
-		//Eval dimensions once
-		for(var i = 0; i < numValues; ++i) {
-			if(valueList[i] > maxHeight) {
-				maxHeight = valueList[i];
-			}
-		}
 		button.value = "Sort";
 		drawArray(valueList);
 		state = START_SORT;
@@ -60,10 +52,6 @@ var smallest = Infinity;
 var smallestIndex = 0;
 var sortHead = 0;
 
-var maxHeight = 0;
-var stepX = (canvas.width - 2 * padding) / numValues;
-var stepY = (canvas.height - 2 * padding) / maxHeight;
-
 function sortStep()
 {
 	//Step forward
@@ -76,17 +64,7 @@ function sortStep()
 	drawArray(valueList);
 	drawBlock(index, valueList, "#004400");
 	drawBlock(smallestIndex, valueList, "#008800");
-
-	//Draw divider
-	ctx.strokeStyle = "#000000";
-	ctx.lineWidth = padding / 4;
-	ctx.beginPath();
-	ctx.moveTo(padding * 0.75 + stepX * sortHead, 0);
-	// ctx.moveTo(0, 0);
-	ctx.lineTo(padding * 0.75 + stepX * sortHead, canvas.height);
-	// ctx.lineTo(canvas.width, canvas.height);
-	ctx.stroke();
-	ctx.closePath();
+	drawDivider(sortHead, valueList, "#000000");
 	
 	setTimeout(doFunction, 200);
 

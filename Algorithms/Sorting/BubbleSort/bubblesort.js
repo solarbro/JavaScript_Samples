@@ -11,8 +11,6 @@ const DONE_SORT = 3;
 
 var state = START_SORT;
 
-// drawArray(valueList);
-// drawBlock(2, valueList, "#008800");
 init();
 
 function init() {
