@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Selection Sort</title>
+        <style>
+            * { padding: 0; margin: 0; }
+            canvas { background: #fff; display: block; margin: 0% auto; }
+        </style>
+    </head>
+    <body>
+        <canvas id="canvas" width="480" height="240"></canvas>
+            <div id="container" style="position: relative; width: 480px; margin: auto">
+				<!-- <input type="button" id="restart" name="restart" position="relative"> -->
+				<!-- <button type="button">Sort!</button>  -->
+				<input id="Control" type="button" value="Sort" onclick="doFunction();" />
+            </div>
+        <script>const canvas_id = "canvas";</script>
+		<script>const debugMode = false;</script> 
+		<script src="../drawArray.js"></script>
+		<script src="../fill.js"></script>
+        <script src="selectionsort.js"></script>
+    </body>

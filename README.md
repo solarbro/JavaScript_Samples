@@ -14,6 +14,7 @@
 ### Algorithms
 #### Sorting
 1. [Bubble Sort](https://solarbro.github.io/JavaScript_Samples/Algorithms/Sorting/BubbleSort/)
+2. [Selection Sort](https://solarbro.github.io/JavaScript_Samples/Algorithms/Sorting/SelectionSort/)
 
 ### Procedural Content generation
 1. [Procedural 2D Terrains](https://solarbro.github.io/JavaScript_Samples/procedural_terrains_2D/)

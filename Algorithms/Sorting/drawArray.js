@@ -17,7 +17,7 @@ function drawArray(values) {
 	ctx.fill();
 	ctx.closePath();
 
-	//Draw columns
+	//Eval dimensions
 	var maxHeight = 0;
 	for(var i = 0; i < values.length; ++i) {
 		if(values[i] > maxHeight) {
@@ -26,7 +26,8 @@ function drawArray(values) {
 	}
 	var stepX = (canvas.width - 2 * padding) / values.length;
 	var stepY = (canvas.height - 2 * padding) / maxHeight;
-
+	
+	//Draw columns
 	ctx.fillStyle = "#444444";
 	for(var i = 0; i < values.length; ++i) {
 		ctx.beginPath();
